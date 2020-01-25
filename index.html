@@ -1,0 +1,135 @@
+<html>
+    <head>
+
+    </head>
+    <body>
+        <canvas id="canvas" width="480" height="480" style="border: 1px solid black;">
+    </body>
+
+    <script>
+        let canvas = document.getElementById("canvas");
+        let ctx = canvas.getContext("2d");
+        
+        ctx.fillStyle = "black";
+        ctx.fillText("BLA", 0, 0);
+
+        let num_columns = 20;
+        let num_rows = num_columns / 2;
+
+        let position = (c, r) => [c, r];
+
+        let is_even = (n) => n % 2 == 0;
+
+        let points_down = ([c, r]) => is_even(c) ? is_even(r) : !is_even(r);
+
+        let is_in_range = (n, lower, upper) => lower <= n && n <= upper;
+
+        let is_in_field = ([c, r]) => is_in_range(c, 0, num_columns - 1) &&
+                                    in_range(r, 0, num_rows - 1);
+
+        let neighboring_positions = ([c, r]) => [[c - 1, r],
+                                                [c + 1, r],
+                                                [c,   points_down([c, r]) ?
+                                                    r - 1 :
+                                                    r + 1]]
+                                                .filter(is_in_field);
+                                                
+        let side_length = canvas.width / ((num_columns - 1) / 2);
+        let triangle_height = Math.sin(Math.PI/3) * side_length;
+
+        let pixel_coordinates = ([c, r]) => {}
+
+        function get_points(position) {
+            var [c, r] = position
+            
+            if (points_down(position)) {
+                return [
+                    [(c / 2) * side_length, r * triangle_height],
+                    [((c / 2) + 1) * side_length, r * triangle_height],
+                    [((c / 2) + 0.5) * side_length, (r + 1) * triangle_height]
+                ];
+            }
+            else {
+                return [
+                    [((c / 2) + 0.5) * side_length, r * triangle_height],
+                    [((c / 2) + 1) * side_length, (r + 1) * triangle_height],
+                    [(c / 2) * side_length, (r + 1) * triangle_height]
+                ];
+            }
+        }
+
+        function draw_triangle(position, fillStyle = 'gray', color = 'darkred') {
+            var [[polyHeadX, polyHeadY], ...polyTail] = get_points(position);
+            ctx.fillStyle = fillStyle;
+            ctx.strokeStyle = color
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(polyHeadX, polyHeadY);
+            polyTail.forEach(([coordX, coordY]) => ctx.lineTo(coordX, coordY));
+            ctx.closePath();
+            ctx.stroke();
+            ctx.fill();
+        }
+        
+        function draw_background() {
+            for (var i = 0; i < num_columns; i++) {
+                for (var j = 0; j < num_rows; j++) {
+                    draw_triangle([i, j]);
+                }
+            }
+        }
+
+        let triangle_position_from_pixel_coordinates = (x, y) => {
+            let row_nr = Math.floor(y / triangle_height);
+
+            var bucket_nr = Math.floor(e.layerX / (side_length / 2));
+            bucket_width  = side_length / 2;
+
+            let x_relative_to_bucket = (x - bucket_width * bucket_nr) / bucket_width;
+            let y_relative_to_bucket = (y - triangle_height * row_nr) / triangle_height;
+
+            console.log([row_nr, bucket_nr]);
+            console.log([x_relative_to_bucket, y_relative_to_bucket]);
+            
+            let falls_left = (is_even(bucket_nr) && is_even(row_nr) && x_relative_to_bucket < (1 - y_relative_to_bucket)) ||
+                             (!is_even(bucket_nr) && is_even(row_nr) && x_relative_to_bucket < y_relative_to_bucket) ||
+                             (!is_even(bucket_nr) && !is_even(row_nr) && x_relative_to_bucket < (1 - y_relative_to_bucket)) ||
+                             (is_even(bucket_nr) && !is_even(row_nr) && x_relative_to_bucket < y_relative_to_bucket)
+
+            let col_nr = falls_left ? bucket_nr : bucket_nr + 1;
+
+            return [col_nr, row_nr];
+        }
+
+        canvas.addEventListener('mousemove', e => {
+            let x = e.layerX;
+            let y = e.layerY;
+
+            let row_nr = Math.floor(y / triangle_height);
+
+            var bucket_nr = Math.floor(e.layerX / (side_length / 2));
+            bucket_width  = side_length / 2;
+
+            let x_relative_to_bucket = (x - bucket_width * bucket_nr) / bucket_width;
+            let y_relative_to_bucket = (y - triangle_height * row_nr) / triangle_height;
+
+            console.log([row_nr, bucket_nr]);
+            console.log([x_relative_to_bucket, y_relative_to_bucket]);
+            
+            let falls_left = (is_even(bucket_nr) && is_even(row_nr) && x_relative_to_bucket < (1 - y_relative_to_bucket)) ||
+                             (!is_even(bucket_nr) && is_even(row_nr) && x_relative_to_bucket < y_relative_to_bucket) ||
+                             (!is_even(bucket_nr) && !is_even(row_nr) && x_relative_to_bucket < (1 - y_relative_to_bucket)) ||
+                             (is_even(bucket_nr) && !is_even(row_nr) && x_relative_to_bucket < y_relative_to_bucket)
+
+            let col_nr = falls_left ? bucket_nr : bucket_nr + 1;
+            console.log([falls_left, col_nr, row_nr]);
+
+            draw_background();
+            draw_triangle([col_nr, row_nr], 'red', 'black');
+        });
+
+        ctx.translate(-side_length / 2, 0);
+        draw_background();
+
+    </script>
+</html>
